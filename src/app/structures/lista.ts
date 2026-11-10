@@ -2,6 +2,7 @@ export interface IList{
     id ?:string;
     title:string;
     items?: string[];
-    tipo?: 'creator' | 'propia';
+    completedItems?: number[];
+    tipo?: 'creator' | 'propia' | 'pendientes';
     createdAt ?:any;
 }

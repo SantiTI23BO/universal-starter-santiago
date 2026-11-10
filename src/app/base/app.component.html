@@ -1,5 +1,5 @@
     <nav class="main-nav blue large-padding light-text">
-      <a routerLink="/">
+      <a routerLink="/" (click)="animarInicio()">
         <span class="nav-title">What to do</span>
       </a>
       <a routerLink="/login" *ngIf="!(afAuth.authState | async)">Iniciar sesión</a>
@@ -18,5 +18,7 @@
     </nav>
 
       <p *ngIf="errorSalida" role="alert">{{ errorSalida }}</p>
-      <router-outlet></router-outlet>
-      
+      <div class="route-stage" [class.reload-animation]="animacionRecarga">
+        <router-outlet></router-outlet>
+      </div>
+

@@ -1,42 +1,499 @@
-<main class="large-padding">
-    <h1>Listas</h1>
-    <form #form="ngForm" (ngSubmit)="save()" [attr.aria-busy]="guardando">
-        <div class="top-space">
-            <label for="list-title">Nombre de la lista</label>
-            <input id="list-title" type="text" name="title" [(ngModel)]="list.title"
-                placeholder="Nombre de la lista" class="form-control" required [disabled]="guardando">
+<main class="large-padding lists-page">
+    <header class="page-heading">
+        <div>
+            <p class="eyebrow">ORGANIZA TUS PENDIENTES</p>
+            <h1>Mis listas</h1>
+            <p class="muted">Crea una lista y abre cada tarjeta para ver o agregar pendientes.</p>
         </div>
-        <div class="top-space">
-            <label for="list-items">Elementos (uno por línea)</label>
-            <textarea id="list-items" name="items" [(ngModel)]="elementos"
-                rows="5" [disabled]="guardando"></textarea>
-        </div>
-        <div class="top-space">
-            <button type="submit" class="btn blue light-text full-width"
-                [disabled]="form.invalid || !list.title.trim() || guardando">
-                {{ guardando ? 'Guardando…' : 'Añadir lista' }}
-            </button>
-        </div>
-        <p *ngIf="mensaje" role="status">{{ mensaje }}</p>
-        <p *ngIf="error" role="alert">{{ error }}</p>
-    </form>
+    </header>
+
+    <button class="toggle-create" type="button"
+        (click)="formularioAbierto = !formularioAbierto"
+        [attr.aria-expanded]="formularioAbierto"
+        aria-controls="create-list-panel">
+        <i class="fa"
+            [class.fa-plus]="!formularioAbierto"
+            [class.fa-minus]="formularioAbierto"
+            aria-hidden="true"></i>
+        {{ formularioAbierto ? 'Cerrar formulario' : 'Agregar nueva lista' }}
+    </button>
+
+    <div id="create-list-panel"
+        class="create-panel"
+        [class.is-open]="formularioAbierto"
+        [attr.aria-hidden]="!formularioAbierto">
+
+        <form class="create-list" #form="ngForm"
+            (ngSubmit)="save()" [attr.aria-busy]="guardando">
+
+            <h2>Nueva lista</h2>
+
+            <div class="top-space">
+                <label for="list-title">Nombre de la lista</label>
+                <input id="list-title" type="text" name="title"
+                    [(ngModel)]="list.title"
+                    placeholder="Ej. Compras de la semana"
+                    class="form-control" required
+                    [disabled]="guardando">
+            </div>
+
+            <div class="top-space">
+                <label for="list-items">
+                    Pendientes iniciales
+                    <span class="muted">(uno por línea, opcional)</span>
+                </label>
+                <textarea id="list-items" name="items"
+                    [(ngModel)]="elementos"
+                    rows="3"
+                    placeholder="Leche&#10;Pan&#10;Fruta"
+                    [disabled]="guardando"></textarea>
+            </div>
+
+            <div class="top-space create-actions">
+                <button type="submit" class="btn emerald"
+                    [disabled]="form.invalid || !list.title.trim() || guardando">
+                    {{ guardando ? 'Guardando…' : 'Crear lista' }}
+                </button>
+            </div>
+
+            <p *ngIf="mensaje" role="status">{{ mensaje }}</p>
+            <p *ngIf="error" role="alert">{{ error }}</p>
+        </form>
+    </div>
+
     <section class="top-space" aria-label="Listas guardadas">
-        <h2>Mis listas</h2>
+        <div class="section-heading">
+            <h2>Tus listas</h2>
+            <span class="list-total" *ngIf="!cargando">
+                {{ listasGuardadas.length }}
+            </span>
+        </div>
+
         <p *ngIf="errorCarga" role="alert">{{ errorCarga }}</p>
         <p *ngIf="cargando" role="status">Cargando listas…</p>
-        <p *ngIf="!cargando && !errorCarga && !listasGuardadas.length">Todavía no tienes listas. Crea la primera arriba.</p>
-        <ul *ngIf="listasGuardadas.length">
-            <li *ngFor="let lista of listasGuardadas">
-                <strong>{{ lista.title }}</strong>
-                <ul *ngIf="lista.items && lista.items.length">
-                    <li *ngFor="let item of lista.items">{{ item }}</li>
-                </ul>
-                <button type="button" (click)="eliminar(lista)"
-                    [disabled]="!!eliminando || !lista.id"
-                    [attr.aria-label]="'Eliminar lista ' + lista.title">
-                    {{ eliminando === lista.id ? 'Eliminando…' : 'Eliminar' }}
-                </button>
+
+        <p *ngIf="!cargando && !errorCarga && !listasGuardadas.length">
+            Todavía no tienes listas. Crea la primera arriba.
+        </p>
+
+        <ul class="list-grid" *ngIf="listasGuardadas.length">
+            <li class="list-card"
+                *ngFor="let lista of listasGuardadas; let i = index"
+                (mouseenter)="registrarSwipe(lista.title, i + 1)">
+
+                <a class="list-open"
+                    *ngIf="lista.id"
+                    [routerLink]="['/list', lista.id]">
+
+                    <span class="list-icon" aria-hidden="true">
+                        <i class="fa fa-list-ul"></i>
+                    </span>
+
+                    <span class="list-info">
+                        <strong>{{ lista.title }}</strong>
+                        <small>
+                            {{ lista.items ? lista.items.length : 0 }} pendientes
+                        </small>
+                    </span>
+
+                    <i class="fa fa-chevron-right list-chevron"
+                        aria-hidden="true"></i>
+                </a>
+
+                <div class="list-actions" aria-label="Acciones de la lista">
+                    <span>Acciones</span>
+
+                    <button class="delete-list" type="button"
+                        (click)="eliminar(lista)"
+                        [disabled]="!!eliminando || !lista.id"
+                        [attr.aria-label]="'Eliminar lista ' + lista.title">
+
+                        <i class="fa fa-trash-o" aria-hidden="true"></i>
+                        {{ eliminando === lista.id ? 'Eliminando…' : 'Eliminar' }}
+                    </button>
+                </div>
             </li>
         </ul>
+
+        <div class="empty-state"
+            *ngIf="!cargando && !errorCarga && !listasGuardadas.length">
+
+            <span class="empty-icon" aria-hidden="true">
+                <i class="fa fa-folder-open-o"></i>
+            </span>
+
+            <strong>Aún no tienes listas</strong>
+            <span>Crea tu primera lista con el formulario de arriba.</span>
+        </div>
     </section>
 </main>
+
+<style>
+    /* DISEÑO GENERAL */
+
+    .lists-page {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 36px 20px 64px;
+        color: #ecfdf5;
+    }
+
+    .page-heading {
+        margin-bottom: 26px;
+    }
+
+    .page-heading h1 {
+        margin: 5px 0;
+        font-size: 2rem;
+        color: #f0fdf4;
+    }
+
+    .eyebrow {
+        margin: 0;
+        color: #34d399;
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .12em;
+    }
+
+    .muted {
+        color: #a7c4b5;
+    }
+
+    /* BOTÓN AGREGAR */
+
+    .toggle-create {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 12px 16px;
+        border: 1px solid #34d399;
+        border-radius: 9px;
+        background: #047857;
+        color: #ffffff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+    }
+
+    .toggle-create:hover {
+        background: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 16px rgba(16, 185, 129, .2);
+    }
+
+    /* FORMULARIO */
+
+    .create-panel {
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transform: translateY(-8px);
+        transition: grid-template-rows .3s ease, opacity .25s ease, transform .3s ease;
+    }
+
+    .create-panel.is-open {
+        grid-template-rows: 1fr;
+        opacity: 1;
+        transform: translateY(0);
+        visibility: visible;
+    }
+
+    .create-panel > form {
+        min-height: 0;
+        overflow: hidden;
+        margin-top: 14px;
+    }
+
+    .create-panel:not(.is-open) {
+        visibility: hidden;
+    }
+
+    .create-list {
+        padding: 22px;
+        border: 1px solid #27634e;
+        border-radius: 14px;
+        background: #172d25;
+        color: #ecfdf5;
+    }
+
+    .create-list h2 {
+        margin: 0 0 14px;
+        color: #6ee7b7;
+    }
+
+    .create-list label {
+        display: block;
+        margin-bottom: 7px;
+        font-weight: 600;
+        color: #d1fae5;
+    }
+
+    .create-list input,
+    .create-list textarea {
+        box-sizing: border-box;
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #376d58;
+        border-radius: 8px;
+        background: #10231c;
+        color: #ecfdf5;
+        font: inherit;
+        outline: none;
+        transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .create-list input:focus,
+    .create-list textarea:focus {
+        border-color: #34d399;
+        box-shadow: 0 0 0 3px rgba(52, 211, 153, .15);
+    }
+
+    .create-list input::placeholder,
+    .create-list textarea::placeholder {
+        color: #78998a;
+    }
+
+    .create-list textarea {
+        resize: vertical;
+    }
+
+    /* BOTÓN CREAR */
+
+    .create-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .create-actions .btn {
+        min-width: 150px;
+        padding: 12px 18px;
+        border: 1px solid #34d399;
+        border-radius: 8px;
+        background: #047857;
+        color: #ffffff;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .2s ease;
+    }
+
+    .create-actions .btn:hover {
+        background: #059669;
+    }
+
+    .create-actions .btn:disabled {
+        opacity: .6;
+        cursor: default;
+    }
+
+    /* ENCABEZADO DE LISTAS */
+
+    .section-heading {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 34px 0 14px;
+    }
+
+    .section-heading h2 {
+        margin: 0;
+        color: #f0fdf4;
+    }
+
+    .list-total {
+        display: inline-flex;
+        min-width: 25px;
+        height: 25px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px;
+        background: #065f46;
+        color: #a7f3d0;
+        font-size: .8rem;
+    }
+
+    /* TARJETAS */
+
+    .list-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(245px, 1fr));
+        gap: 14px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .list-card {
+        position: relative;
+        display: flex;
+        min-height: 96px;
+        overflow: hidden;
+        border: 1px solid #27634e;
+        border-radius: 12px;
+        background: #173d30;
+        transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+
+    .list-card:hover,
+    .list-card:focus-within {
+        transform: translateY(-3px);
+        border-color: #34d399;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, .25);
+    }
+
+    .list-open {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        flex: 1;
+        align-items: center;
+        gap: 13px;
+        padding: 16px;
+        background: #173d30;
+        color: #ecfdf5;
+        text-decoration: none;
+        transition: transform .28s cubic-bezier(.2, .75, .25, 1);
+    }
+
+    .list-card:hover .list-open,
+    .list-card:focus-within .list-open {
+        transform: translateX(-112px);
+    }
+
+    /* ICONOS */
+
+    .list-icon,
+    .empty-icon {
+        display: inline-flex;
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 11px;
+        background: #065f46;
+        color: #a7f3d0;
+        font-size: 1.15rem;
+    }
+
+    .list-info {
+        display: flex;
+        min-width: 0;
+        flex: 1;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .list-info strong {
+        overflow-wrap: anywhere;
+        color: #ecfdf5;
+        font-size: 1rem;
+    }
+
+    .list-info small {
+        color: #a7c4b5;
+    }
+
+    .list-chevron {
+        color: #6ee7b7;
+        font-size: .8rem;
+    }
+
+    /* ACCIONES Y ELIMINAR */
+
+    .list-actions {
+        position: absolute;
+        inset: 0 0 0 auto;
+        display: flex;
+        width: 112px;
+        align-items: center;
+        flex-direction: column;
+        justify-content: center;
+        gap: 5px;
+        color: #a7f3d0;
+        font-size: .7rem;
+        font-weight: 700;
+    }
+
+    .delete-list {
+        padding: 7px 9px;
+        border: 1px solid #854545;
+        border-radius: 6px;
+        background: #492b30;
+        color: #fecaca;
+        font-size: .78rem;
+        cursor: pointer;
+    }
+
+    .delete-list:hover {
+        background: #7f343c;
+        color: #ffffff;
+    }
+
+    .delete-list:disabled {
+        opacity: .6;
+        cursor: default;
+    }
+
+    /* ESTADO VACÍO */
+
+    .empty-state {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        gap: 9px;
+        padding: 34px 18px;
+        border: 1px dashed #376d58;
+        border-radius: 12px;
+        color: #a7c4b5;
+        text-align: center;
+    }
+
+    .empty-state strong {
+        color: #ecfdf5;
+    }
+
+    .empty-icon {
+        margin-bottom: 3px;
+        font-size: 1.2rem;
+    }
+
+    /* MENSAJES */
+
+    .create-list [role="status"] {
+        color: #6ee7b7;
+    }
+
+    [role="alert"] {
+        color: #fca5a5;
+    }
+
+    /* RESPONSIVE */
+
+    @media (max-width: 520px) {
+        .lists-page {
+            padding: 24px 14px 44px;
+        }
+
+        .create-list {
+            padding: 17px;
+        }
+
+        .page-heading h1 {
+            font-size: 1.7rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .toggle-create,
+        .create-panel,
+        .list-card,
+        .list-open {
+            transition: none;
+        }
+    }
+</style>

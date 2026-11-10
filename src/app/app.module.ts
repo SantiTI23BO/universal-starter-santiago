@@ -25,6 +25,7 @@ import { ListCreatorComponent } from './creator/list.creator.component';
 import{FormsModule} from "@angular/forms";
 import { ListService } from './services/list.services';
 import { TarjetaComponent } from './tarjeta/tarjeta.component';
+import { ListDetailComponent } from './list-detail/list-detail.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -32,7 +33,8 @@ import { TarjetaComponent } from './tarjeta/tarjeta.component';
     LoginComponent,
     RegistroComponent,
     ListCreatorComponent,
-    TarjetaComponent
+    TarjetaComponent,
+    ListDetailComponent
   ],
   imports: [
     BrowserModule.withServerTransition({appId: 'my-app'}),

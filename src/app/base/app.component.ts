@@ -13,6 +13,13 @@ export class AppComponent {
 
   cerrandoSesion = false;
   errorSalida = '';
+  animacionRecarga = false;
+
+  animarInicio(): void {
+    this.animacionRecarga = false;
+    setTimeout(() => { this.animacionRecarga = true; }, 20);
+    setTimeout(() => { this.animacionRecarga = false; }, 650);
+  }
 
   async logout(): Promise<void> {
     if (this.cerrandoSesion) { return; }

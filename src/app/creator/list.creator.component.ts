@@ -16,8 +16,10 @@ export class ListCreatorComponent implements OnInit, OnDestroy {
     public errorCarga = '';
     public guardando = false;
     public eliminando: string | null = null;
+    public listasDesplegadas: { [id: string]: boolean } = {};
     public mensaje = '';
     public error = '';
+    public formularioAbierto = false;
 
     constructor(private listS: ListService) {}
 
@@ -33,6 +35,18 @@ export class ListCreatorComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         if (this.subscription) { this.subscription.unsubscribe(); }
+    }
+
+    alternarLista(id: string): void {
+        this.listasDesplegadas[id] = !this.listasDesplegadas[id];
+    }
+
+    estaDesplegada(id: string): boolean {
+        return !!this.listasDesplegadas[id];
+    }
+
+    registrarSwipe(titulo: string, numero: number): void {
+        console.log(numero + ' SWIPE ' + titulo.toUpperCase());
     }
 
     async eliminar(lista: IList): Promise<void> {
@@ -58,15 +72,23 @@ export class ListCreatorComponent implements OnInit, OnDestroy {
         try {
             await this.listS.add({
                 title: this.list.title.trim(),
+                tipo: 'pendientes',
                 items: this.elementos.split(/\r?\n/).map(item => item.trim()).filter(item => !!item)
             });
             this.mensaje = 'Lista guardada correctamente.';
             this.list = { title: '' };
             this.elementos = '';
+            this.formularioAbierto = false;
         } catch (error) {
-            this.error = 'No se pudo guardar la lista. Comprueba tu sesión y los permisos de Firestore.';
+            this.error = this.mensajeError(error, 'No se pudo guardar la lista.');
         } finally {
             this.guardando = false;
         }
+    }
+
+    private mensajeError(error: any, prefijo: string): string {
+        const codigo = error && error.code ? ' (' + error.code + ')' : '';
+        const detalle = error && error.message ? error.message : 'Error desconocido.';
+        return prefijo + codigo + ' ' + detalle;
     }
 }

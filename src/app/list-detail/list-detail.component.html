@@ -1,0 +1,71 @@
+<main class="large-padding">
+    <a routerLink="/creators">&larr; Volver a mis listas</a>
+    <p *ngIf="cargando" role="status">Cargando lista…</p>
+    <section *ngIf="!cargando && lista">
+        <h1>{{ lista.title }}</h1>
+        <p><small>ID de la ruta: {{ lista.id }}</small></p>
+
+        <h2>Pendientes</h2>
+        <p class="swipe-hint" *ngIf="lista.items && lista.items.length">Desliza un pendiente a la derecha para marcarlo como completado.</p>
+        <p *ngIf="!lista.items || !lista.items.length">Esta lista todavía no tiene pendientes.</p>
+        <ul class="task-list" *ngIf="lista.items && lista.items.length">
+            <li *ngFor="let item of lista.items; let i = index" class="task-row"
+                [class.completed]="estaCompletado(i)"
+                [style.animation-delay.ms]="i * 55"
+                (touchstart)="iniciarSwipe($event, i)" (touchmove)="moverSwipe($event, i)"
+                (touchend)="finalizarSwipe($event, i)" (touchcancel)="finalizarSwipe($event, i)">
+                <div class="swipe-action" aria-hidden="true"><i class="fa fa-check"></i></div>
+                <div class="task-card" [style.transform]="'translateX(' + (swipeOffset[i] || 0) + 'px)'">
+                    <span class="task-label">{{ item }}</span>
+                    <button type="button" class="complete-task" (click)="establecerCompletado(i, !estaCompletado(i))"
+                        [disabled]="actualizandoItem !== null"
+                        [attr.aria-label]="estaCompletado(i) ? 'Reabrir ' + item : 'Marcar como completado: ' + item">
+                        <i class="fa" [class.fa-check-circle]="estaCompletado(i)" [class.fa-circle-o]="!estaCompletado(i)" aria-hidden="true"></i>
+                        {{ estaCompletado(i) ? 'Completado' : 'Completar' }}
+                    </button>
+                </div>
+            </li>
+        </ul>
+
+        <button class="add-task-toggle" type="button" (click)="formularioAbierto = !formularioAbierto"
+            [attr.aria-expanded]="formularioAbierto" aria-controls="add-task-panel">
+            <i class="fa" [class.fa-plus]="!formularioAbierto" [class.fa-minus]="formularioAbierto" aria-hidden="true"></i>
+            {{ formularioAbierto ? 'Cerrar' : 'Agregar nuevo pendiente' }}
+        </button>
+        <div id="add-task-panel" class="add-task-panel" [class.is-open]="formularioAbierto" [attr.aria-hidden]="!formularioAbierto">
+        <form (ngSubmit)="agregar()" [attr.aria-busy]="guardando">
+            <label for="nuevo-pendiente">Agregar pendiente</label>
+            <input id="nuevo-pendiente" name="pendiente" type="text" class="form-control"
+                [(ngModel)]="pendiente" required [disabled]="guardando">
+            <button type="submit" class="btn blue light-text top-space"
+                [disabled]="!pendiente.trim() || guardando">
+                {{ guardando ? 'Guardando…' : 'Agregar' }}
+            </button>
+        </form>
+        </div>
+        <p *ngIf="mensaje" role="status">{{ mensaje }}</p>
+        <p *ngIf="error" role="alert">{{ error }}</p>
+    </section>
+    <p *ngIf="!cargando && !lista && !error" role="alert">No se encontró esa lista.</p>
+    <p *ngIf="error && !lista" role="alert">{{ error }}</p>
+</main>
+<style>
+    .task-list { display: grid; gap: 9px; padding: 0; list-style: none; }
+    .task-row { position: relative; overflow: hidden; border-radius: 9px; background: #335c52; animation: task-in .35s both ease-out; touch-action: pan-y; }
+    .task-card { position: relative; z-index: 1; display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px 9px 15px; border: 1px solid #454a66; border-radius: 9px; background: #32364f; transition: transform .18s ease, background .2s ease, border-color .2s ease; }
+    .task-label { overflow-wrap: anywhere; }
+    .task-row.completed .task-card { border-color: #507c68; background: #293e3b; }
+    .task-row.completed .task-label { color: #b8c9c1; text-decoration: line-through; }
+    .swipe-action { position: absolute; inset: 0 auto 0 0; display: flex; width: 58px; align-items: center; justify-content: center; color: #fff; }
+    .complete-task { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; padding: 7px 9px; border: 0; border-radius: 7px; background: #424b78; color: #fff; font: inherit; font-size: .8rem; cursor: pointer; }
+    .complete-task:disabled { opacity: .65; cursor: wait; }
+    .swipe-hint { color: #b9bed0; font-size: .9rem; }
+    .add-task-toggle { display: inline-flex; align-items: center; gap: 9px; margin-top: 14px; padding: 11px 15px; border: 1px solid #8797ff; border-radius: 8px; background: #424b78; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+    .add-task-panel { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-7px); transition: grid-template-rows .3s ease, opacity .25s ease, transform .3s ease; }
+    .add-task-panel.is-open { grid-template-rows: 1fr; opacity: 1; transform: translateY(0); visibility: visible; }
+    .add-task-panel:not(.is-open) { visibility: hidden; }
+    .add-task-panel > form { min-height: 0; overflow: hidden; padding-top: 14px; }
+    @keyframes task-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 520px) { .task-card { align-items: flex-start; flex-direction: column; } .complete-task { align-self: flex-end; } }
+    @media (prefers-reduced-motion: reduce) { .task-row, .task-card, .add-task-panel { animation: none; transition: none; } }
+</style>
